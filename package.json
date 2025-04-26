@@ -38,7 +38,8 @@
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.11",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "vercel": "^41.6.2"
   },
   "engines": {
     "node": ">=18.17.0"

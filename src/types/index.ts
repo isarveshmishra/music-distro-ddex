@@ -31,6 +31,7 @@ export interface Track {
   id: string;
   title: string;
   artists: Artist[];
+  releaseId: string;
   isrc?: string;
   duration: number;
   explicit: boolean;

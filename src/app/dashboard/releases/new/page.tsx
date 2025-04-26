@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Release, Track, Artist } from '@/types';
+import { releaseService } from '@/services/releaseService';
+import { trackService } from '@/services/trackService';
+import { userService } from '@/services/userService';
 
 export default function NewReleasePage() {
   const router = useRouter();
@@ -13,7 +16,7 @@ export default function NewReleasePage() {
     type: 'Single',
     genre: '',
     releaseDate: new Date(),
-    label: '',
+    label: userService.getCurrentUser()?.label || '',
     territories: ['Worldwide'],
     tracks: [],
     status: 'Draft'
@@ -24,39 +27,71 @@ export default function NewReleasePage() {
     explicit: false,
     position: 1
   });
+  const [audioFile, setAudioFile] = useState<File | null>(null);
 
   const handleBasicInfoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentStep(2);
   };
 
-  const handleTrackSubmit = (e: React.FormEvent) => {
+  const handleTrackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentTrack.title && currentTrack.artists?.length) {
-      setRelease(prev => ({
-        ...prev,
-        tracks: [...(prev.tracks || []), currentTrack as Track]
-      }));
-      setCurrentTrack({
-        title: '',
-        artists: [],
-        explicit: false,
-        position: (release.tracks?.length || 0) + 2
-      });
+    if (currentTrack.title && currentTrack.artists?.length && audioFile) {
+      try {
+        // Upload audio file
+        const audioUrl = await trackService.uploadAudio(audioFile);
+        
+        // Create track with audio file
+        const newTrack: Partial<Track> = {
+          ...currentTrack,
+          audioFile: {
+            url: audioUrl,
+            format: audioFile.type.split('/')[1] || 'mp3',
+            bitrate: 320
+          },
+          duration: 0 // In a real app, we would calculate this from the audio file
+        };
+
+        setRelease(prev => ({
+          ...prev,
+          tracks: [...(prev.tracks || []), newTrack as Track]
+        }));
+
+        // Reset form
+        setCurrentTrack({
+          title: '',
+          artists: [],
+          explicit: false,
+          position: (release.tracks?.length || 0) + 2
+        });
+        setAudioFile(null);
+      } catch (error) {
+        console.error('Error uploading track:', error);
+        alert('Failed to upload track. Please try again.');
+      }
+    } else {
+      alert('Please fill in all required fields and upload an audio file.');
     }
   };
 
   const handleFinalSubmit = async () => {
     setIsLoading(true);
     try {
-      // TODO: Implement API call to save release
-      console.log('Saving release:', release);
+      const newRelease = await releaseService.createRelease(release);
       router.push('/dashboard/releases');
     } catch (error) {
-      console.error('Error saving release:', error);
+      console.error('Error creating release:', error);
+      alert('Failed to create release. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // ... existing code ...
+    const formData = new FormData(e.target as HTMLFormElement);
+    // ... existing code ...
   };
 
   return (
@@ -177,6 +212,7 @@ export default function NewReleasePage() {
                 <label className="block text-sm font-medium text-gray-700">Track Title</label>
                 <input
                   type="text"
+                  required
                   value={currentTrack.title}
                   onChange={(e) => setCurrentTrack({ ...currentTrack, title: e.target.value })}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
@@ -187,6 +223,7 @@ export default function NewReleasePage() {
                 <label className="block text-sm font-medium text-gray-700">Artist Name</label>
                 <input
                   type="text"
+                  required
                   placeholder="Add primary artist"
                   onChange={(e) => {
                     const artist: Artist = {
@@ -200,6 +237,22 @@ export default function NewReleasePage() {
                     setCurrentTrack({ ...currentTrack, artists: [artist] });
                   }}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Audio File</label>
+                <input
+                  type="file"
+                  required
+                  accept="audio/*"
+                  onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                  className="mt-1 block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-indigo-50 file:text-indigo-700
+                    hover:file:bg-indigo-100"
                 />
               </div>
 
@@ -232,6 +285,7 @@ export default function NewReleasePage() {
                     type="button"
                     onClick={() => setCurrentStep(3)}
                     className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+                    disabled={!release.tracks?.length}
                   >
                     Next: Review
                   </button>
