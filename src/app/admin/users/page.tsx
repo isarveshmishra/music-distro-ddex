@@ -1,56 +1,73 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
-import { User } from '@/types';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'admin';
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export default function UserManagementPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock user data
-    const mockUsers: User[] = [
-      {
-        id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
-        role: 'user',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      },
-      {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        role: 'admin',
-        createdAt: new Date('2024-01-02'),
-        updatedAt: new Date('2024-01-02')
-      },
-      {
-        id: '3',
-        name: 'Bob Wilson',
-        email: 'bob@example.com',
-        role: 'user',
-        createdAt: new Date('2024-01-03'),
-        updatedAt: new Date('2024-01-03')
-      }
-    ];
+    // Check if current user is admin
+    const currentUser = localStorage.getItem('user');
+    if (!currentUser) {
+      router.push('/login');
+      return;
+    }
 
-    setUsers(mockUsers);
-    setLoading(false);
-  }, []);
+    try {
+      const user = JSON.parse(currentUser);
+      if (user.role !== 'admin') {
+        router.push('/dashboard');
+        return;
+      }
+
+      // Get all users from localStorage
+      const allUsers = localStorage.getItem('users');
+      if (allUsers) {
+        const parsedUsers = JSON.parse(allUsers);
+        setUsers(parsedUsers.map((u: any) => ({
+          ...u,
+          createdAt: new Date(u.createdAt),
+          updatedAt: new Date(u.updatedAt)
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
 
   const handleRoleChange = (userId: string, newRole: 'user' | 'admin') => {
-    setUsers(users.map(user => 
+    const updatedUsers = users.map(user => 
       user.id === userId ? { ...user, role: newRole, updatedAt: new Date() } : user
-    ));
+    );
+    setUsers(updatedUsers);
+    localStorage.setItem('users', JSON.stringify(updatedUsers));
   };
 
   const handleDeleteUser = (userId: string) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter(user => user.id !== userId));
+      const updatedUsers = users.filter(user => user.id !== userId);
+      setUsers(updatedUsers);
+      localStorage.setItem('users', JSON.stringify(updatedUsers));
     }
+  };
+
+  const handleAddUser = () => {
+    router.push('/admin/users/new');
   };
 
   if (loading) {
@@ -80,7 +97,10 @@ export default function UserManagementPage() {
                 {users.filter(u => u.role === 'user').length} Regular Users
               </p>
             </div>
-            <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+            <button 
+              onClick={handleAddUser}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            >
               Add New User
             </button>
           </div>
@@ -110,7 +130,9 @@ export default function UserManagementPage() {
                       <option value="admin">Admin</option>
                     </select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.createdAt.toLocaleDateString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.createdAt.toLocaleDateString()}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <button 
                       onClick={() => handleDeleteUser(user.id)}

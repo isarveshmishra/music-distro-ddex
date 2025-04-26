@@ -2,10 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { userService } from '@/services/userService';
-import { releaseService } from '@/services/releaseService';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
-import { Release } from '@/types';
+
+interface Artist {
+  name: string;
+  roles: string[];
+}
+
+interface Release {
+  id: string;
+  title: string;
+  genre: string;
+  artists: Artist[];
+  releaseDate: string;
+  type: string;
+  status: 'Draft' | 'Pending' | 'Approved' | 'Rejected' | 'Distributed';
+}
 
 export default function ReleasesPage() {
   const router = useRouter();
@@ -14,34 +26,47 @@ export default function ReleasesPage() {
 
   useEffect(() => {
     // Check authentication
-    const currentUser = userService.getCurrentUser();
+    const currentUser = localStorage.getItem('user');
     if (!currentUser) {
       router.push('/login');
       return;
     }
 
-    // Load releases
-    const loadReleases = async () => {
-      try {
-        setLoading(true);
-        const releases = releaseService.getAllReleases();
-        setReleases(releases);
-      } catch (error) {
-        console.error('Error loading releases:', error);
-      } finally {
-        setLoading(false);
+    // Load mock releases
+    const mockReleases: Release[] = [
+      {
+        id: '1',
+        title: 'Summer Vibes',
+        genre: 'Pop',
+        artists: [{ name: 'John Doe', roles: ['Primary'] }],
+        releaseDate: '2024-06-01',
+        type: 'Album',
+        status: 'Draft'
+      },
+      {
+        id: '2',
+        title: 'Midnight Blues',
+        genre: 'Jazz',
+        artists: [
+          { name: 'Jane Smith', roles: ['Primary'] },
+          { name: 'Bob Wilson', roles: ['Featured'] }
+        ],
+        releaseDate: '2024-07-15',
+        type: 'Single',
+        status: 'Pending'
       }
-    };
+    ];
 
-    loadReleases();
+    setReleases(mockReleases);
+    setLoading(false);
   }, [router]);
 
   const handleDistribute = async (releaseId: string) => {
     try {
-      const updatedRelease = await releaseService.distributeRelease(releaseId);
-      setReleases(releases.map(release => 
-        release.id === releaseId ? updatedRelease : release
-      ));
+      const updatedReleases = releases.map(release => 
+        release.id === releaseId ? { ...release, status: 'Pending' as const } : release
+      );
+      setReleases(updatedReleases);
       alert('Release submitted for distribution!');
     } catch (error) {
       console.error('Error distributing release:', error);
@@ -52,7 +77,6 @@ export default function ReleasesPage() {
   const handleDelete = async (releaseId: string) => {
     if (window.confirm('Are you sure you want to delete this release?')) {
       try {
-        releaseService.deleteRelease(releaseId);
         setReleases(releases.filter(release => release.id !== releaseId));
         alert('Release deleted successfully!');
       } catch (error) {
