@@ -21,8 +21,13 @@ module.exports = {
           900: '#0c4a6e',
         },
       },
+      fontFamily: {
+        sans: ['Inter var', 'sans-serif'],
+      },
     },
   },
   plugins: [],
-  darkMode: 'class',
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
 } 
