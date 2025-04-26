@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { initializeUsers, addUser } from '@/lib/users';
 
 export default function Signup() {
   const router = useRouter();
@@ -14,6 +15,11 @@ export default function Signup() {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Initialize users in localStorage when component mounts
+    initializeUsers();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,17 +33,19 @@ export default function Signup() {
     }
 
     try {
-      setIsLoading(true);
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const newUser = {
+        id: Date.now().toString(), // Simple ID generation
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: 'user' as const,
+      };
 
-      const data = await response.json();
+      const success = addUser(newUser);
 
-      if (!response.ok) {
-        setError(data.error || 'Signup failed');
+      if (!success) {
+        setError('Email already exists');
+        setIsLoading(false);
         return;
       }
 
@@ -45,7 +53,6 @@ export default function Signup() {
       router.push('/login');
     } catch (err) {
       setError('An error occurred during signup');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -141,9 +148,12 @@ export default function Signup() {
           </div>
         </form>
         <div className="text-center">
-          <Link href="/login" className="text-indigo-600 hover:text-indigo-500">
-            Already have an account? Sign in
-          </Link>
+          <p className="mt-4 text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link href="/login" className="text-primary-600 hover:text-primary-500">
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     </div>

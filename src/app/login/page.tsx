@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { initializeUsers, findUser } from '@/lib/users';
 
 export default function Login() {
   const router = useRouter();
@@ -13,38 +14,36 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    // Initialize users in localStorage when component mounts
+    initializeUsers();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      setIsLoading(true);
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email, password: formData.password }),
-      });
+      const user = findUser(formData.email, formData.password);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Login failed');
+      if (!user) {
+        setError('Invalid email or password');
+        setIsLoading(false);
         return;
       }
 
       // Store user data in localStorage
-      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('currentUser', JSON.stringify(user));
 
       // Redirect based on user role
-      if (data.user.role === 'admin') {
+      if (user.role === 'admin') {
         router.push('/admin/dashboard');
       } else {
         router.push('/dashboard');
       }
     } catch (err) {
       setError('An error occurred during login');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -113,6 +112,9 @@ export default function Login() {
             <Link href="/signup" className="text-primary-600 hover:text-primary-500">
               Sign up
             </Link>
+          </p>
+          <p className="mt-2 text-center text-xs text-gray-500">
+            Demo Account: demo@example.com / Demo@123
           </p>
         </div>
       </div>
