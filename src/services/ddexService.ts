@@ -17,12 +17,19 @@ interface ReleaseList {
   dealList: any[];
 }
 
+// DDEX Party constants
+const DDEX_PARTY = {
+  ID: 'PA-DPIDA-2024090404-U',
+  NAME: 'VIVI Distro',
+  SCHEMA_VERSION: 'ern/411'
+};
+
 export const ddexService = {
   generateMessageHeader(): DDEXMessage {
     return {
       messageId: `MSG-${Date.now()}`,
       messageThreadId: `THR-${Date.now()}`,
-      messageSchemaVersionId: 'ern/411',
+      messageSchemaVersionId: DDEX_PARTY.SCHEMA_VERSION,
       businessProfileId: 'MusicDistributionProfile'
     };
   },
@@ -154,9 +161,9 @@ export const ddexService = {
           <MessageId>${header.messageId}</MessageId>
           <MessageThreadId>${header.messageThreadId}</MessageThreadId>
           <MessageSender>
-            <PartyId>MUSIC_DISTRO</PartyId>
+            <PartyId>${DDEX_PARTY.ID}</PartyId>
             <PartyName>
-              <FullName>Music Distribution Platform</FullName>
+              <FullName>${DDEX_PARTY.NAME}</FullName>
             </PartyName>
           </MessageSender>
           <MessageRecipient>

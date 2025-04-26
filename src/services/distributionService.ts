@@ -3,6 +3,49 @@ import { ddexService } from './ddexService';
 
 const DISTRIBUTIONS_KEY = 'music_distributions';
 
+// Platform-specific DDEX Party IDs
+const PLATFORM_PARTY_IDS = {
+  Spotify: 'SPOTIFY',
+  AppleMusic: 'ITUNES',
+  Amazon: 'AMAZONMUSIC',
+  Deezer: 'DEEZER',
+  YouTube: 'YOUTUBE'
+};
+
+// Platform-specific delivery requirements
+const PLATFORM_REQUIREMENTS = {
+  Spotify: {
+    audioFormats: ['WAV', 'FLAC'],
+    minBitrate: 16,
+    minSampleRate: 44100,
+    artworkSize: 3000
+  },
+  AppleMusic: {
+    audioFormats: ['WAV', 'AIFF'],
+    minBitrate: 16,
+    minSampleRate: 44100,
+    artworkSize: 3000
+  },
+  Amazon: {
+    audioFormats: ['FLAC'],
+    minBitrate: 16,
+    minSampleRate: 44100,
+    artworkSize: 3000
+  },
+  Deezer: {
+    audioFormats: ['FLAC', 'WAV'],
+    minBitrate: 16,
+    minSampleRate: 44100,
+    artworkSize: 3000
+  },
+  YouTube: {
+    audioFormats: ['WAV', 'FLAC'],
+    minBitrate: 16,
+    minSampleRate: 44100,
+    artworkSize: 3000
+  }
+};
+
 export const distributionService = {
   getAllDistributions(): Distribution[] {
     const distributions = localStorage.getItem(DISTRIBUTIONS_KEY);
@@ -13,10 +56,45 @@ export const distributionService = {
     return this.getAllDistributions().filter(dist => dist.releaseId === releaseId);
   },
 
+  validatePlatformRequirements(release: Release, platform: string): string[] {
+    const errors: string[] = [];
+    const requirements = PLATFORM_REQUIREMENTS[platform as keyof typeof PLATFORM_REQUIREMENTS];
+
+    release.tracks.forEach((track, index) => {
+      const format = track.audioFile.format.toUpperCase();
+      if (!requirements.audioFormats.includes(format)) {
+        errors.push(`Track ${index + 1}: Audio format ${format} not supported by ${platform}. Supported formats: ${requirements.audioFormats.join(', ')}`);
+      }
+
+      // Add more platform-specific validations here
+      // For example: bitrate, sample rate, artwork size, etc.
+    });
+
+    return errors;
+  },
+
   async createDistribution(release: Release, platforms: string[]): Promise<Distribution> {
     // Validate release is ready for distribution
     if (release.status !== 'Approved') {
       throw new Error('Release must be approved before distribution');
+    }
+
+    // Validate platform requirements
+    const validationErrors: { platform: string; errors: string[] }[] = [];
+    platforms.forEach(platform => {
+      const errors = this.validatePlatformRequirements(release, platform);
+      if (errors.length > 0) {
+        validationErrors.push({ platform, errors });
+      }
+    });
+
+    if (validationErrors.length > 0) {
+      throw new Error(
+        'Platform requirements not met:\n' +
+        validationErrors.map(({ platform, errors }) =>
+          `${platform}:\n${errors.map(e => `- ${e}`).join('\n')}`
+        ).join('\n\n')
+      );
     }
 
     // Create distribution platforms array
@@ -36,27 +114,38 @@ export const distributionService = {
     };
 
     try {
-      // Generate DDEX message
-      const ddexMessage = await ddexService.generateERN(release);
-      const isValid = await ddexService.validateDDEX(ddexMessage);
+      // Generate DDEX message for each platform
+      await Promise.all(platforms.map(async platform => {
+        const ddexMessage = await ddexService.generateERN(release);
+        const isValid = await ddexService.validateDDEX(ddexMessage);
 
-      if (!isValid) {
-        throw new Error('Invalid DDEX message');
-      }
+        if (!isValid) {
+          throw new Error(`Invalid DDEX message for ${platform}`);
+        }
 
-      // In a production environment, this would:
-      // 1. Upload audio files to CDN
-      // 2. Generate artwork in required formats
-      // 3. Send DDEX message to each platform
-      // 4. Track delivery status
-      
-      // For demo purposes, we'll simulate successful delivery
-      setTimeout(() => {
-        this.updateDistributionStatus(newDistribution.id, 'Complete');
-        distributionPlatforms.forEach(platform => {
-          this.updatePlatformStatus(newDistribution.id, platform.platform, 'Complete');
-        });
-      }, 5000);
+        // In production, this would:
+        // 1. Upload audio files to CDN with platform-specific transcoding
+        // 2. Generate artwork in required formats
+        // 3. Send DDEX message to platform-specific endpoint
+        // 4. Track delivery status
+
+        // For demo, simulate platform-specific processing time
+        const processingTime = Math.random() * 3000 + 2000; // 2-5 seconds
+        setTimeout(() => {
+          this.updatePlatformStatus(
+            newDistribution.id,
+            platform as DistributionPlatform['platform'],
+            'Complete',
+            `https://${platform.toLowerCase()}.com/track/${release.id}`
+          );
+
+          // Update overall status if all platforms are complete
+          const dist = this.getAllDistributions().find(d => d.id === newDistribution.id);
+          if (dist && dist.platforms.every(p => p.status === 'Complete')) {
+            this.updateDistributionStatus(newDistribution.id, 'Complete');
+          }
+        }, processingTime);
+      }));
 
       // Save distribution
       const distributions = this.getAllDistributions();
