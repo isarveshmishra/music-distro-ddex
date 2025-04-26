@@ -77,7 +77,7 @@ export default function NewReleasePage() {
   const handleFinalSubmit = async () => {
     setIsLoading(true);
     try {
-      const newRelease = await releaseService.createRelease(release);
+      await releaseService.createRelease(release);
       router.push('/dashboard/releases');
     } catch (error) {
       console.error('Error creating release:', error);
@@ -85,13 +85,6 @@ export default function NewReleasePage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // ... existing code ...
-    const formData = new FormData(e.target as HTMLFormElement);
-    // ... existing code ...
   };
 
   return (

@@ -8,7 +8,7 @@ export const releaseService = {
     return releases ? JSON.parse(releases) : [];
   },
 
-  getReleasesByUser(userId: string): Release[] {
+  getReleasesByUser(_userId: string): Release[] {
     const releases = this.getAllReleases();
     return releases.filter(release => {
       const user = JSON.parse(localStorage.getItem('currentUser') || '{}');

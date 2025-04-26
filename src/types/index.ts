@@ -81,4 +81,14 @@ export interface Analytics {
   revenue: number;
   period: string;
   territory: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  label?: string;
+  createdAt: Date;
+  updatedAt: Date;
 } 

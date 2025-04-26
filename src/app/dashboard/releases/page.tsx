@@ -3,81 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { userService } from '@/services/userService';
+import { releaseService } from '@/services/releaseService';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Release } from '@/types';
-
-const mockReleases: Release[] = [
-  {
-    id: '1',
-    title: 'Summer Vibes',
-    artists: [{
-      id: '1',
-      name: 'John Doe',
-      roles: ['Primary'],
-      genres: ['Pop'],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }],
-    releaseDate: new Date('2024-06-15'),
-    type: 'Single',
-    status: 'Draft',
-    genre: 'Pop',
-    label: 'Example Label',
-    territories: ['Worldwide'],
-    tracks: [],
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: '2',
-    title: 'Midnight Tales',
-    artists: [{
-      id: '2',
-      name: 'Jane Smith',
-      roles: ['Primary'],
-      genres: ['Electronic'],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }],
-    releaseDate: new Date('2024-07-01'),
-    type: 'Album',
-    status: 'Pending',
-    genre: 'Electronic',
-    label: 'Example Label',
-    territories: ['Worldwide'],
-    tracks: [],
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: '3',
-    title: 'Urban Dreams',
-    artists: [{
-      id: '3',
-      name: 'Mike Johnson',
-      roles: ['Primary'],
-      genres: ['Hip Hop'],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }],
-    releaseDate: new Date('2024-05-30'),
-    type: 'EP',
-    status: 'Draft',
-    genre: 'Hip Hop',
-    label: 'Example Label',
-    territories: ['Worldwide'],
-    tracks: [],
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-];
 
 export default function ReleasesPage() {
   const router = useRouter();
   const [releases, setReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedRelease, setExpandedRelease] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'details' | 'tracks' | 'distribution' | 'errors'>('details');
 
   useEffect(() => {
     // Check authentication
@@ -91,52 +24,8 @@ export default function ReleasesPage() {
     const loadReleases = async () => {
       try {
         setLoading(true);
-        // Mock data for now
-        const mockReleases: Release[] = [
-          {
-            id: '1',
-            title: 'First Release',
-            status: 'Draft',
-            artists: [{
-              id: '1',
-              name: 'Artist 1',
-              roles: ['Primary'],
-              genres: ['Pop'],
-              createdAt: new Date(),
-              updatedAt: new Date()
-            }],
-            releaseDate: new Date('2024-03-20'),
-            type: 'Album',
-            genre: 'Pop',
-            label: 'Example Label',
-            territories: ['Worldwide'],
-            tracks: [],
-            createdAt: new Date(),
-            updatedAt: new Date()
-          },
-          {
-            id: '2',
-            title: 'Second Release',
-            status: 'Pending',
-            artists: [{
-              id: '2',
-              name: 'Artist 2',
-              roles: ['Primary'],
-              genres: ['Rock'],
-              createdAt: new Date(),
-              updatedAt: new Date()
-            }],
-            releaseDate: new Date('2024-03-21'),
-            type: 'Single',
-            genre: 'Rock',
-            label: 'Example Label',
-            territories: ['Worldwide'],
-            tracks: [],
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }
-        ];
-        setReleases(mockReleases);
+        const releases = releaseService.getAllReleases();
+        setReleases(releases);
       } catch (error) {
         console.error('Error loading releases:', error);
       } finally {
@@ -149,29 +38,55 @@ export default function ReleasesPage() {
 
   const handleDistribute = async (releaseId: string) => {
     try {
-      // Update the release in mock data
-      const updatedRelease = mockReleases.find(r => r.id === releaseId);
-      if (updatedRelease) {
-        updatedRelease.status = 'Pending';
-        setReleases(releases.map(release => 
-          release.id === releaseId ? updatedRelease : release
-        ));
-        alert('Release submitted for distribution!');
-      }
+      const updatedRelease = releaseService.distributeRelease(releaseId);
+      setReleases(releases.map(release => 
+        release.id === releaseId ? updatedRelease : release
+      ));
+      alert('Release submitted for distribution!');
     } catch (error) {
       console.error('Error distributing release:', error);
       alert('Failed to submit release for distribution. Please try again.');
     }
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  const handleDelete = async (releaseId: string) => {
+    if (window.confirm('Are you sure you want to delete this release?')) {
+      try {
+        releaseService.deleteRelease(releaseId);
+        setReleases(releases.filter(release => release.id !== releaseId));
+        alert('Release deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting release:', error);
+        alert('Failed to delete release. Please try again.');
+      }
+    }
+  };
+
+  const getStatusBadgeColor = (status: Release['status']) => {
+    const colors = {
+      Draft: 'bg-gray-100 text-gray-800',
+      Pending: 'bg-yellow-100 text-yellow-800',
+      Approved: 'bg-green-100 text-green-800',
+      Rejected: 'bg-red-100 text-red-800',
+      Distributed: 'bg-blue-100 text-blue-800'
+    };
+    return colors[status];
+  };
+
+  if (loading) return (
+    <DashboardLayout>
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    </DashboardLayout>
+  );
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Upcoming Releases</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Releases</h1>
             <p className="mt-1 text-sm text-gray-500">Manage and distribute your music releases</p>
           </div>
           <button
@@ -185,49 +100,7 @@ export default function ReleasesPage() {
           </button>
         </div>
 
-        {/* Releases List */}
-        <div className="overflow-hidden rounded-lg bg-white shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artist</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Release Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {releases.map((release) => (
-                <tr key={release.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{release.title}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {release.artists.find(a => a.roles.includes('Primary'))?.name || release.artists[0]?.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {release.releaseDate.toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{release.type}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${release.status === 'Distributed' ? 'bg-green-100 text-green-800' : 
-                        release.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
-                        'bg-gray-100 text-gray-800'}`}>
-                      {release.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                    <button className="text-red-600 hover:text-red-900">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {releases.length === 0 && (
+        {releases.length === 0 ? (
           <div className="mt-8 rounded-lg bg-white p-6 text-center shadow">
             <div className="mx-auto h-12 w-12 text-gray-400">
               <svg className="h-full w-full" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -252,6 +125,78 @@ export default function ReleasesPage() {
                 Create New Release
               </button>
             </div>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-lg bg-white shadow">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artist</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Release Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {releases.map((release) => (
+                  <tr key={release.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{release.title}</div>
+                      <div className="text-sm text-gray-500">{release.genre}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {release.artists.find(a => a.roles.includes('Primary'))?.name || release.artists[0]?.name}
+                      </div>
+                      {release.artists.length > 1 && (
+                        <div className="text-sm text-gray-500">+{release.artists.length - 1} more</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(release.releaseDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {release.type}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(release.status)}`}>
+                        {release.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => router.push(`/dashboard/releases/${release.id}`)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => router.push(`/dashboard/releases/${release.id}/edit`)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Edit
+                      </button>
+                      {release.status === 'Draft' && (
+                        <button
+                          onClick={() => handleDistribute(release.id)}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Distribute
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(release.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

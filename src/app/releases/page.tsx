@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
-import { userService } from '@/services/userService';
 
 interface Release {
   id: string;
