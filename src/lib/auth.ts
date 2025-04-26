@@ -27,12 +27,12 @@ const users: User[] = [
 ];
 
 export async function authenticateUser(email: string, password: string): Promise<User | null> {
-  const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-  
+  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
   if (!user) {
     return null;
   }
 
   const isValid = await bcrypt.compare(password, user.password);
   return isValid ? user : null;
-} 
+}

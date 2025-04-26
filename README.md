@@ -27,17 +27,20 @@ A global music distribution platform with DDEX delivery, built with Next.js and 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <your-repo-url>
 cd music-distro-ddex
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Run the development server:
+
 ```bash
 npm run dev
 ```
@@ -63,4 +66,4 @@ Create a `.env.local` file in the root directory with the following variables:
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License.

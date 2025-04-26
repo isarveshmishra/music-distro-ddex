@@ -19,25 +19,23 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      console.log('Submitting:', formData); // Debug log
+      setIsLoading(true);
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, password: formData.password }),
       });
 
       const data = await response.json();
-      console.log('Response:', data); // Debug log
 
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        setError(data.error || 'Login failed');
+        return;
       }
 
       // Store user data in localStorage
       localStorage.setItem('user', JSON.stringify(data.user));
-      
+
       // Redirect based on user role
       if (data.user.role === 'admin') {
         router.push('/admin/dashboard');
@@ -45,8 +43,7 @@ export default function Login() {
         router.push('/dashboard');
       }
     } catch (err) {
-      console.error('Login error:', err); // Debug log
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError('An error occurred during login');
     } finally {
       setIsLoading(false);
     }
@@ -62,11 +59,14 @@ export default function Login() {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <div
+              className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
+              role="alert"
+            >
               <span className="block sm:inline">{error}</span>
             </div>
           )}
-          <div className="rounded-md shadow-sm -space-y-px">
+          <div className="-space-y-px rounded-md shadow-sm">
             <div>
               <label htmlFor="email" className="sr-only">
                 Email address
@@ -79,7 +79,7 @@ export default function Login() {
                 className="input-field rounded-t-md"
                 placeholder="Email address"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={e => setFormData({ ...formData, email: e.target.value })}
                 disabled={isLoading}
               />
             </div>
@@ -95,28 +95,27 @@ export default function Login() {
                 className="input-field rounded-b-md"
                 placeholder="Password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={e => setFormData({ ...formData, password: e.target.value })}
                 disabled={isLoading}
               />
             </div>
           </div>
 
           <div>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isLoading}
-            >
+            <button type="submit" className="btn-primary" disabled={isLoading}>
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
         </form>
         <div className="text-center">
-          <Link href="/signup" className="text-indigo-600 hover:text-indigo-500">
-            Don't have an account? Sign up
-          </Link>
+          <p className="mt-4 text-center text-sm text-gray-600">
+            Don&apos;t have an account?{' '}
+            <Link href="/signup" className="text-primary-600 hover:text-primary-500">
+              Sign up
+            </Link>
+          </p>
         </div>
       </div>
     </div>
   );
-} 
+}

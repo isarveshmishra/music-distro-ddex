@@ -27,31 +27,24 @@ export default function Signup() {
     }
 
     try {
-      console.log('Submitting:', { ...formData, confirmPassword: undefined }); // Debug log
+      setIsLoading(true);
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
-      console.log('Response:', data); // Debug log
 
       if (!response.ok) {
-        throw new Error(data.message || 'Signup failed');
+        setError(data.error || 'Signup failed');
+        return;
       }
 
-      // Redirect to login page after successful signup
+      // Redirect to login page on successful signup
       router.push('/login');
     } catch (err) {
-      console.error('Signup error:', err); // Debug log
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError('An error occurred during signup');
     } finally {
       setIsLoading(false);
     }
@@ -67,11 +60,14 @@ export default function Signup() {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <div
+              className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
+              role="alert"
+            >
               <span className="block sm:inline">{error}</span>
             </div>
           )}
-          <div className="rounded-md shadow-sm -space-y-px">
+          <div className="-space-y-px rounded-md shadow-sm">
             <div>
               <label htmlFor="name" className="sr-only">
                 Full Name
@@ -84,7 +80,7 @@ export default function Signup() {
                 className="input-field rounded-t-md"
                 placeholder="Full Name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
                 disabled={isLoading}
               />
             </div>
@@ -100,7 +96,7 @@ export default function Signup() {
                 className="input-field"
                 placeholder="Email address"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={e => setFormData({ ...formData, email: e.target.value })}
                 disabled={isLoading}
               />
             </div>
@@ -116,7 +112,7 @@ export default function Signup() {
                 className="input-field"
                 placeholder="Password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={e => setFormData({ ...formData, password: e.target.value })}
                 disabled={isLoading}
               />
             </div>
@@ -132,18 +128,14 @@ export default function Signup() {
                 className="input-field rounded-b-md"
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
                 disabled={isLoading}
               />
             </div>
           </div>
 
           <div>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isLoading}
-            >
+            <button type="submit" className="btn-primary" disabled={isLoading}>
               {isLoading ? 'Creating account...' : 'Sign up'}
             </button>
           </div>
@@ -156,4 +148,4 @@ export default function Signup() {
       </div>
     </div>
   );
-} 
+}
