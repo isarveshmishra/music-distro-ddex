@@ -16,21 +16,24 @@ export default function UserManagementPage() {
         name: 'John Doe',
         email: 'john@example.com',
         role: 'user',
-        createdAt: '2024-01-01'
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
       },
       {
         id: '2',
         name: 'Jane Smith',
         email: 'jane@example.com',
         role: 'admin',
-        createdAt: '2024-01-02'
+        createdAt: new Date('2024-01-02'),
+        updatedAt: new Date('2024-01-02')
       },
       {
         id: '3',
         name: 'Bob Wilson',
         email: 'bob@example.com',
         role: 'user',
-        createdAt: '2024-01-03'
+        createdAt: new Date('2024-01-03'),
+        updatedAt: new Date('2024-01-03')
       }
     ];
 
@@ -40,7 +43,7 @@ export default function UserManagementPage() {
 
   const handleRoleChange = (userId: string, newRole: 'user' | 'admin') => {
     setUsers(users.map(user => 
-      user.id === userId ? { ...user, role: newRole } : user
+      user.id === userId ? { ...user, role: newRole, updatedAt: new Date() } : user
     ));
   };
 
@@ -107,7 +110,7 @@ export default function UserManagementPage() {
                       <option value="admin">Admin</option>
                     </select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.createdAt}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.createdAt.toLocaleDateString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <button 
                       onClick={() => handleDeleteUser(user.id)}

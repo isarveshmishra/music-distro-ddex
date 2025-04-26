@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
+import { FaSpinner } from 'react-icons/fa';
 
 interface AnalyticsData {
   totalUsers: number;
@@ -12,124 +12,120 @@ interface AnalyticsData {
   monthlyGrowth: number;
 }
 
-interface ChartData {
-  label: string;
-  value: number;
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  description?: string;
 }
 
+const StatCard: React.FC<StatCardProps> = ({ title, value, description }) => (
+  <div className="bg-white p-6 rounded-lg shadow-md">
+    <h3 className="text-lg font-semibold text-gray-700">{title}</h3>
+    <p className="text-3xl font-bold text-indigo-600 mt-2">{value}</p>
+    {description && <p className="text-sm text-gray-500 mt-2">{description}</p>}
+  </div>
+);
+
 export default function SystemAnalyticsPage() {
-  const [analytics, setAnalytics] = useState<AnalyticsData>({
-    totalUsers: 0,
-    activeUsers: 0,
-    totalReleases: 0,
-    pendingReleases: 0,
-    totalRevenue: 0,
-    monthlyGrowth: 0
-  });
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock analytics data
-    const mockAnalytics: AnalyticsData = {
-      totalUsers: 1250,
-      activeUsers: 850,
-      totalReleases: 320,
-      pendingReleases: 45,
-      totalRevenue: 25000,
-      monthlyGrowth: 15
+    const fetchAnalytics = async () => {
+      try {
+        // Simulated API call with mock data
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        setAnalyticsData({
+          totalUsers: 1250,
+          activeUsers: 850,
+          totalReleases: 320,
+          pendingReleases: 45,
+          totalRevenue: 25000,
+          monthlyGrowth: 15
+        });
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setAnalytics(mockAnalytics);
-    setLoading(false);
+    fetchAnalytics();
   }, []);
-
-  const StatCard = ({ title, value, description }: { title: string; value: string | number; description: string }) => (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-      <p className="mt-2 text-3xl font-semibold text-indigo-600">{value}</p>
-      <p className="mt-2 text-sm text-gray-500">{description}</p>
-    </div>
-  );
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex h-screen items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-        </div>
-      </DashboardLayout>
+      <div className="flex justify-center items-center min-h-screen">
+        <FaSpinner className="animate-spin text-4xl text-indigo-600" />
+      </div>
     );
   }
 
+  if (!analyticsData) {
+    return <div>Error loading analytics data</div>;
+  }
+
   return (
-    <DashboardLayout>
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">System Analytics</h1>
-          <p className="mt-1 text-sm text-gray-500">Overview of system performance and metrics</p>
-        </div>
+    <div className="p-6">
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">System Analytics</h1>
+      <p className="text-gray-600 mb-8">Overview of system performance and metrics</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <StatCard
-            title="Total Users"
-            value={analytics.totalUsers.toLocaleString()}
-            description="Total registered users on the platform"
-          />
-          <StatCard
-            title="Active Users"
-            value={analytics.activeUsers.toLocaleString()}
-            description="Users active in the last 30 days"
-          />
-          <StatCard
-            title="Total Releases"
-            value={analytics.totalReleases.toLocaleString()}
-            description="Total music releases on the platform"
-          />
-          <StatCard
-            title="Pending Reviews"
-            value={analytics.pendingReleases.toLocaleString()}
-            description="Releases waiting for review"
-          />
-          <StatCard
-            title="Total Revenue"
-            value={`$${analytics.totalRevenue.toLocaleString()}`}
-            description="Total revenue generated"
-          />
-          <StatCard
-            title="Monthly Growth"
-            value={`${analytics.monthlyGrowth}%`}
-            description="User growth in the last 30 days"
-          />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StatCard
+          title="Total Users"
+          value={analyticsData.totalUsers}
+          description="Registered users on the platform"
+        />
+        <StatCard
+          title="Active Users"
+          value={analyticsData.activeUsers}
+          description="Users active in the last 30 days"
+        />
+        <StatCard
+          title="Total Releases"
+          value={analyticsData.totalReleases}
+          description="Music releases on the platform"
+        />
+        <StatCard
+          title="Pending Releases"
+          value={analyticsData.pendingReleases}
+          description="Releases awaiting approval"
+        />
+        <StatCard
+          title="Total Revenue"
+          value={`$${analyticsData.totalRevenue.toLocaleString()}`}
+          description="Total revenue generated"
+        />
+        <StatCard
+          title="Monthly Growth"
+          value={`${analyticsData.monthlyGrowth}%`}
+          description="User growth this month"
+        />
+      </div>
 
-        <div className="mt-8 bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-            <div className="mt-4">
-              <div className="border-t border-gray-200">
-                <dl className="divide-y divide-gray-200">
-                  <div className="py-4 flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">New Users Today</dt>
-                    <dd className="text-sm text-gray-900">25</dd>
-                  </div>
-                  <div className="py-4 flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">New Releases Today</dt>
-                    <dd className="text-sm text-gray-900">8</dd>
-                  </div>
-                  <div className="py-4 flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Active Sessions</dt>
-                    <dd className="text-sm text-gray-900">142</dd>
-                  </div>
-                  <div className="py-4 flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Average Response Time</dt>
-                    <dd className="text-sm text-gray-900">250ms</dd>
-                  </div>
-                </dl>
-              </div>
+      <div className="mt-12">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Recent Activity</h2>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">New Users (Today)</span>
+              <span className="font-semibold">25</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">New Releases (Today)</span>
+              <span className="font-semibold">8</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Active Sessions</span>
+              <span className="font-semibold">142</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Average Response Time</span>
+              <span className="font-semibold">245ms</span>
             </div>
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 } 

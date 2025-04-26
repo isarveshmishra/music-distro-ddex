@@ -38,14 +38,14 @@ export default function ReleasesPage() {
 
   const handleDistribute = async (releaseId: string) => {
     try {
-      const updatedRelease = releaseService.distributeRelease(releaseId);
+      const updatedRelease = await releaseService.distributeRelease(releaseId);
       setReleases(releases.map(release => 
         release.id === releaseId ? updatedRelease : release
       ));
       alert('Release submitted for distribution!');
     } catch (error) {
       console.error('Error distributing release:', error);
-      alert('Failed to submit release for distribution. Please try again.');
+      alert('Failed to distribute release. Please try again.');
     }
   };
 
