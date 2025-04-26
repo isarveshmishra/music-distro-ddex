@@ -22,11 +22,13 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter var', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/forms'),
+  ],
   future: {
     hoverOnlyWhenSupported: true,
   },
